@@ -11,24 +11,49 @@ const clerkWebhooks = async (req, res) => {
     });
 
     const { data, type } = req.body;
+    if (!type || !data) {
+      throw new Error("Invalid webhook payload");
+    }
 
     switch (type) {
-      case "user.created":
-        await handleUserCreated(data);
+      case "user.created": {
+        if (!data.email_addresses || !data.email_addresses[0]) {
+          throw new Error("Invalid user data for creation");
+        }
+        const userData = {
+          clerkId: data.id,
+          email: data.email_addresses[0].email_address,
+          name: `${data.first_name} ${data.last_name}`,
+          photo: data.image_url,
+        };
+        await User.create(userData);
+        res.json({ message: "User created successfully" });
         break;
-
-      case "user.updated":
-        await handleUserUpdated(data);
+      }
+      case "user.updated": {
+        if (!data.email_addresses || !data.email_addresses[0]) {
+          throw new Error("Invalid user data for update");
+        }
+        const userData = {
+          email: data.email_addresses[0].email_address,
+          name: `${data.first_name} ${data.last_name}`,
+          photo: data.image_url,
+        };
+        await User.findOneAndUpdate({ clerkId: data.id }, userData);
+        res.json({ message: "User updated successfully" });
         break;
-
-      case "user.deleted":
-        await handleUserDeleted(data.id);
+      }
+      case "user.deleted": {
+        await User.findOneAndDelete({ clerkId: data.id });
+        res.json({ message: "User deleted successfully" });
         break;
+      }
 
       default:
-        console.log(`Unhandled event type: ${type}`);
+        console.warn(`Unhandled event type: ${type}`);
+        res.status(400).json({ error: "Unhandled event type" });
+        break;
     }
-    console.log("user updated", handleUserUpdated);
     res.status(200).json({ message: "Webhook handled successfully" });
   } catch (error) {
     console.error("Error handling webhook:", error.message);
@@ -36,43 +61,4 @@ const clerkWebhooks = async (req, res) => {
   }
 };
 
-const handleUserCreated = async (userData) => {
-  const { id, email_addresses, first_name, last_name, profile_image_url } =
-    userData;
-
-  // Add new user to MongoDB
-  const user = new User({
-    clerkId: id,
-    email: email_addresses[0]?.email_address,
-    name: `${first_name} ${last_name}`.trim(),
-    profileImage: profile_image_url,
-  });
-
-  await user.save();
-  console.log("User created:", user);
-};
-
-const handleUserUpdated = async (userData) => {
-  const { id, email_addresses, first_name, last_name, profile_image_url } =
-    userData;
-
-  // Update user in MongoDB
-  const updatedUser = await User.findOneAndUpdate(
-    { clerkId: id },
-    {
-      email: email_addresses[0]?.email_address,
-      name: `${first_name} ${last_name}`.trim(),
-      profileImage: profile_image_url,
-    },
-    { new: true }
-  );
-
-  console.log("User updated:", updatedUser);
-};
-
-const handleUserDeleted = async (clerkId) => {
-  // Delete user from MongoDB
-  await User.findOneAndDelete({ clerkId });
-  console.log("User deleted:", clerkId);
-};
 export { clerkWebhooks };
