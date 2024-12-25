@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import connectDb from "./configs/mongoDb.js";
+import userRouter from "./routes/user.routes.js";
 
 //app config
 const PORT = process.env.PORT || 4000;
@@ -15,6 +16,7 @@ app.use(cors());
 app.get("/", (req, res) => {
   res.send("API Working");
 });
+app.use("/api/user", userRouter);
 
 app.listen(PORT, (req, res) => {
   connectDb();
