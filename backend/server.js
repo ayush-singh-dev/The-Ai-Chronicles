@@ -18,7 +18,7 @@ app.get("/", (req, res) => {
 });
 app.use("/api/user", userRouter);
 
-app.listen(PORT, (req, res) => {
+app.listen(PORT, () => {
   connectDb();
   console.log("server run at:", PORT);
 });
