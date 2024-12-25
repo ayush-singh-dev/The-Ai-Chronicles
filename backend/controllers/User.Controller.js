@@ -4,7 +4,7 @@ import User from "../models/userModel.js";
 const clerkWebhooks = async (req, res) => {
   try {
     const whook = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
-    await whook.verify(JSON.stringify(req.body), {
+    await whook.verify(req.rawbody, {
       "svix-id": req.headers["svix-id"],
       "svix-timestamp": req.headers["svix-timestamp"],
       "svix-signature": req.headers["svix-signature"],
@@ -23,7 +23,7 @@ const clerkWebhooks = async (req, res) => {
         const userData = {
           clerkId: data.id,
           email: data.email_addresses[0].email_address,
-          name: `${data.first_name} ${data.last_name}`,
+          name: `${data.first_name} ${data.last_name}`.trim(),
           photo: data.image_url,
         };
         await User.create(userData);
@@ -36,7 +36,7 @@ const clerkWebhooks = async (req, res) => {
         }
         const userData = {
           email: data.email_addresses[0].email_address,
-          name: `${data.first_name} ${data.last_name}`,
+          name: `${data.first_name} ${data.last_name}`.trim(),
           photo: data.image_url,
         };
         await User.findOneAndUpdate({ clerkId: data.id }, userData);
