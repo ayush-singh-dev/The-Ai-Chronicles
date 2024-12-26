@@ -9,13 +9,7 @@ const PORT = process.env.PORT || 4000;
 const app = express();
 
 // app middleware
-app.use(
-  express.json({
-    verify: (req, res, buf) => {
-      req.rawBody = buf.toString(); // Save raw body
-    },
-  })
-);
+app.use(express.json());
 app.use(cors());
 
 // API Routes
@@ -23,6 +17,11 @@ app.get("/", (req, res) => {
   res.send("API Working");
 });
 app.use("/api/user", userRouter);
+
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(400).send({ error: "Invalid webhook signature or payload" });
+});
 
 app.listen(PORT, () => {
   connectDb();

@@ -4,12 +4,15 @@ import User from "../models/userModel.js";
 const clerkWebhooks = async (req, res) => {
   try {
     const whook = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
-    await whook.verify(req.rawbody, {
+    console.log("whook", whook);
+    await whook.verify(JSON.stringify(req.body), {
       "svix-id": req.headers["svix-id"],
       "svix-timestamp": req.headers["svix-timestamp"],
       "svix-signature": req.headers["svix-signature"],
     });
-
+    console.log("Headers:", req.headers);
+    console.log("Raw Body:", req.rawBody);
+    console.log("Parsed Body:", req.body);
     const { data, type } = req.body;
     if (!type || !data) {
       throw new Error("Invalid webhook payload");
