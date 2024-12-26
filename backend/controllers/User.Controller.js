@@ -7,10 +7,17 @@ const clerkWebhooks = async (req, res) => {
     console.log("Headers:", req.headers);
     console.log("Body:", req.rawBody);
     console.log("whook", whook);
-    await whook.verify(req.rawBody, {
-      "svix-id": req.headers["svix-id"],
-      "svix-timestamp": req.headers["svix-timestamp"],
-      "svix-signature": req.headers["svix-signature"],
+
+    //headers
+    const signature = req.headers["svix-signature"];
+    const timestamp = req.headers["svix-timestamp"];
+    const id = req.headers["svix-id"];
+    console.log("Headers:", { id, timestamp, signature });
+    console.log("Raw Body:", req.body.toString());
+    await whook.verify(req.rawBody.toString(), {
+      "svix-id": id,
+      "svix-timestamp": timestamp,
+      "svix-signature": signature,
     });
     console.log("req.body", req.body);
     const { data, type } = req.body;
@@ -53,6 +60,10 @@ const clerkWebhooks = async (req, res) => {
         throw new Error("Unhandled webhook event type");
     }
   } catch (error) {
+    console.error("Error processing webhook:", error);
+    console.error("Headers:", req.headers);
+    console.error("Raw Body:", req.rawBody);
+    console.error("Parsed Body:", req.body);
     console.error("Error handling webhook:", {
       message: error.message,
       headers: req.headers,
