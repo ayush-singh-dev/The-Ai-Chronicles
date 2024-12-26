@@ -11,7 +11,6 @@ const app = express();
 
 // app middleware
 app.use(express.json());
-app.use(bodyParser.json({ limit: "1mb" })); // Parse JSON
 app.use(bodyParser.raw({ type: "application/json", limit: "1mb" }));
 app.use(cors());
 
