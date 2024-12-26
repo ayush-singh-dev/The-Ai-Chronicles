@@ -5,9 +5,9 @@ const clerkWebhooks = async (req, res) => {
   try {
     const whook = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
     console.log("Headers:", req.headers);
-    console.log("Body:", req.body);
+    console.log("Body:", req.rawBody);
     console.log("whook", whook);
-    await whook.verify(JSON.stringify(req.body), {
+    await whook.verify(req.rawBody, {
       "svix-id": req.headers["svix-id"],
       "svix-timestamp": req.headers["svix-timestamp"],
       "svix-signature": req.headers["svix-signature"],
@@ -20,56 +20,38 @@ const clerkWebhooks = async (req, res) => {
 
     switch (type) {
       case "user.created": {
-        try {
-          if (!data.email_addresses || !data.email_addresses[0]) {
-            throw new Error("Invalid user data for creation");
-          }
-          const userData = {
-            clerkId: data.id,
-            email: data.email_addresses[0].email_address,
-            name: `${data.first_name} ${data.last_name}`.trim(),
-            profileImage: data.image_url,
-          };
-          await User.create(userData);
-          return res.status(200).json({ message: "User created successfully" });
-        } catch (error) {
-          console.error("Error creating user:", error.message);
-          return res.status(500).json({ error: "Failed to create user" });
+        if (!data.email_addresses || !data.email_addresses[0]) {
+          throw new Error("Invalid user data for creation");
         }
+        const userData = {
+          clerkId: data.id,
+          email: data.email_addresses[0].email_address,
+          name: `${data.first_name} ${data.last_name}`.trim(),
+          profileImage: data.image_url,
+        };
+        await User.create(userData);
+        return res.status(200).json({ message: "User created successfully" });
       }
       case "user.updated": {
-        try {
-          if (!data.email_addresses || !data.email_addresses[0]) {
-            throw new Error("Invalid user data for update");
-          }
-          const userData = {
-            email: data.email_addresses[0].email_address,
-            name: `${data.first_name} ${data.last_name}`.trim(),
-            profileImage: data.image_url,
-          };
-          await User.findOneAndUpdate({ clerkId: data.id }, userData);
-          return res.status(200).json({ message: "User updated successfully" });
-        } catch (error) {
-          console.error("Error updating user:", error.message);
-          return res.status(500).json({ error: "Failed to update user" });
+        if (!data.email_addresses || !data.email_addresses[0]) {
+          throw new Error("Invalid user data for update");
         }
+        const userData = {
+          email: data.email_addresses[0].email_address,
+          name: `${data.first_name} ${data.last_name}`.trim(),
+          profileImage: data.image_url,
+        };
+        await User.findOneAndUpdate({ clerkId: data.id }, userData);
+        return res.status(200).json({ message: "User updated successfully" });
       }
       case "user.deleted": {
-        try {
-          await User.findOneAndDelete({ clerkId: data.id });
-          return res.status(200).json({ message: "User deleted successfully" });
-        } catch (error) {
-          console.error("Error deleting user:", error.message);
-          return res.status(500).json({ error: "Failed to delete user" });
-        }
+        await User.findOneAndDelete({ clerkId: data.id });
+        return res.status(200).json({ message: "User deleted successfully" });
       }
 
       default:
-        console.warn(`Unhandled event type: ${type}`);
-        res.status(400).json({ error: "Unhandled event type" });
-        break;
+        throw new Error("Unhandled webhook event type");
     }
-    res.status(200).json({ message: "Webhook handled successfully" });
   } catch (error) {
     console.error("Error handling webhook:", {
       message: error.message,
@@ -77,7 +59,7 @@ const clerkWebhooks = async (req, res) => {
       body: req.body,
     });
     if (error.message.includes("Invalid webhook")) {
-      return res.status(401).json({ error: "Invalid webhook signature" });
+      return res.status(401).json({ error: "Invalid webhooks signature" });
     }
     return res
       .status(400)

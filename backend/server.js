@@ -1,7 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import bodyParser from "body-parser";
+
 import connectDb from "./configs/mongoDb.js";
 import userRouter from "./routes/user.routes.js";
 
@@ -10,8 +10,13 @@ const PORT = process.env.PORT || 4000;
 const app = express();
 
 // app middleware
-app.use(express.json());
-app.use(bodyParser.raw({ type: "application/json", limit: "1mb" }));
+app.use(
+  express.json({
+    verify: (req, res, buf) => {
+      req.rawBody = buf.toString(); // Save raw body
+    },
+  })
+);
 app.use(cors());
 
 // API Routes
