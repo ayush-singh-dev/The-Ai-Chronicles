@@ -28,7 +28,7 @@ const clerkWebhooks = async (req, res) => {
             clerkId: data.id,
             email: data.email_addresses[0].email_address,
             name: `${data.first_name} ${data.last_name}`.trim(),
-            photo: data.image_url,
+            profileImage: data.image_url,
           };
           await User.create(userData);
           return res.status(200).json({ message: "User created successfully" });
@@ -45,7 +45,7 @@ const clerkWebhooks = async (req, res) => {
           const userData = {
             email: data.email_addresses[0].email_address,
             name: `${data.first_name} ${data.last_name}`.trim(),
-            photo: data.image_url,
+            profileImage: data.image_url,
           };
           await User.findOneAndUpdate({ clerkId: data.id }, userData);
           return res.status(200).json({ message: "User updated successfully" });
