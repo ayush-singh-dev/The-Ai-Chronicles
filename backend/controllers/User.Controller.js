@@ -4,6 +4,12 @@ import User from "../models/userModel.js";
 const clerkWebhooks = async (req, res) => {
   try {
     const whook = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
+
+    if (!whook) {
+      throw new Error(
+        "Error: Please add SIGNING_SECRET from Clerk Dashboard to .env"
+      );
+    }
     console.log("Headers:", req.headers);
     console.log("Body:", req.rawBody);
     console.log("whook", whook);
@@ -12,14 +18,19 @@ const clerkWebhooks = async (req, res) => {
     const signature = req.headers["svix-signature"];
     const timestamp = req.headers["svix-timestamp"];
     const id = req.headers["svix-id"];
+
     console.log("Headers:", { id, timestamp, signature });
-    console.log("Raw Body:", req.body.toString());
-    await whook.verify(JSON.stringify(req.body), {
-      "svix-id": id,
-      "svix-timestamp": timestamp,
-      "svix-signature": signature,
-    });
-    console.log("req.body", req.body);
+    console.log("Raw Body:", req.body);
+
+    try {
+      await whook.verify(req.body, {
+        "svix-id": id,
+        "svix-timestamp": timestamp,
+        "svix-signature": signature,
+      });
+    } catch (error) {
+      console.error("Error verifying webhook:", error);
+    }
     const { data, type } = req.body;
     if (!type || !data) {
       throw new Error("Invalid webhook payload");
